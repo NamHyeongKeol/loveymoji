@@ -175,9 +175,17 @@ export function UploadScreen({ initialUploads }: { initialUploads: Upload[] }) {
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
-      <header className="px-[3.2rem] pt-[4.0rem] text-center">
-        <div className="flex flex-col gap-[0.8rem]">
-          <h1 className="text-[2.4rem] font-semibold leading-[1.1]">{t("app_title")}</h1>
+      <header className="px-[3rem] pt-[4.0rem] text-center">
+        <div className="flex flex-col items-center gap-[1.6rem]">
+          <Image
+            src="/logo.png"
+            alt="Loveymoji logo"
+            width={200}
+            height={200}
+            className="h-[14rem] w-[14rem]"
+            priority
+          />
+          <h1 className="text-[2rem] font-semibold leading-[1.1]">Create your own emoji!</h1>
           <p className="text-[1.2rem] text-foreground/70 leading-[1.6]">{t("app_tagline")}</p>
         </div>
       </header>

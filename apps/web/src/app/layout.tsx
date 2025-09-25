@@ -15,26 +15,26 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://loveymoji.app"),
-  title: "Loveymoji",
-  description: "Responsive mobile uploads powered by Next.js, tRPC, and Prisma.",
+  title: "LoveyMoji",
+  description: "Create your own emoji!",
   icons: { icon: "/favicon.ico" },
   openGraph: {
-    title: "Loveymoji",
-    description: "Responsive mobile uploads powered by Next.js, tRPC, and Prisma.",
+    title: "LoveyMoji",
+    description: "Create your own emoji!",
     type: "website",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Loveymoji",
+        alt: "LoveyMoji",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Loveymoji",
-    description: "Responsive mobile uploads powered by Next.js, tRPC, and Prisma.",
+    title: "LoveyMoji",
+    description: "Create your own emoji!",
     images: ["/og-image.jpg"],
   },
 };
