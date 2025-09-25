@@ -1,0 +1,18 @@
+{
+  "name": "loveymoji",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm --filter web lint",
+    "db:generate": "pnpm --filter @loveymoji/db exec prisma generate",
+    "db:push": "pnpm --filter @loveymoji/db exec prisma db push",
+    "db:migrate:dev": "pnpm --filter @loveymoji/db exec prisma migrate dev",
+    "db:studio": "pnpm --filter @loveymoji/db exec prisma studio"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

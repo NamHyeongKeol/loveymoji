@@ -1,0 +1,14 @@
+{
+  "app_title": "Loveymoji",
+  "app_tagline": "Upload and manage your images effortlessly.",
+  "upload_button": "Select Image",
+  "upload_cta": "Upload Image",
+  "recent_uploads": "Recent uploads",
+  "empty_state_title": "No uploads yet",
+  "empty_state_description": "Upload your first image to see it here.",
+  "upload_success": "Upload complete",
+  "upload_error": "Upload failed",
+  "uploading": "Uploading...",
+  "select_file_warning": "Please select an image first.",
+  "supported_formats": "Supported formats: JPEG, PNG, WEBP, GIF, HEIC, HEIF"
+}
