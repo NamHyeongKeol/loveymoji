@@ -10,5 +10,8 @@
   "upload_error": "Upload failed",
   "uploading": "Uploading...",
   "select_file_warning": "Please select an image first.",
-  "supported_formats": "Supported formats: JPEG, PNG, WEBP, GIF, HEIC, HEIF"
+  "supported_formats": "Supports: JPEG, PNG, WEBP, GIF, HEIC, HEIF (max 10MB)",
+  "drop_zone_hint": "Drag & drop an image here, or click to select",
+  "drop_zone_title": "Select image",
+  "clear_button": "Clear Image"
 }

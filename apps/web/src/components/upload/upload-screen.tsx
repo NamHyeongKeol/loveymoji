@@ -1,11 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type {
+  ChangeEvent,
+  DragEvent,
+  HTMLAttributes,
+  KeyboardEvent,
+} from "react";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { Upload } from "@loveymoji/db";
 
 type Status = "idle" | "uploading" | "success" | "error";
@@ -38,24 +49,38 @@ export function UploadScreen({ initialUploads }: { initialUploads: Upload[] }) {
     };
   }, [preview]);
 
-  function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+  const applyFile = useCallback(
+    (file: File | null | undefined) => {
+      if (!file) {
+        setSelectedFile(null);
+        setStatus("idle");
+        if (preview) {
+          URL.revokeObjectURL(preview);
+        }
+        setPreview(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+
+      setSelectedFile(file);
+      setStatus("idle");
+      setErrorMessage(null);
+
+      if (preview) {
+        URL.revokeObjectURL(preview);
+      }
+
+      const objectUrl = URL.createObjectURL(file);
+      setPreview(objectUrl);
+    },
+    [preview]
+  );
+
+  function onFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file) {
-      setSelectedFile(null);
-      setPreview(null);
-      return;
-    }
-
-    if (preview) {
-      URL.revokeObjectURL(preview);
-    }
-
-    setSelectedFile(file);
-    setStatus("idle");
-    setErrorMessage(null);
-
-    const objectUrl = URL.createObjectURL(file);
-    setPreview(objectUrl);
+    applyFile(file ?? null);
   }
 
   async function handleUpload() {
@@ -103,78 +128,172 @@ export function UploadScreen({ initialUploads }: { initialUploads: Upload[] }) {
     }
   }
 
+  const dropZoneRef = useRef<HTMLLabelElement | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  function handleDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const file = event.dataTransfer.files?.[0];
+    applyFile(file ?? null);
+    setIsDragging(false);
+  }
+
+  const dropZoneProps: HTMLAttributes<HTMLLabelElement> = {
+    onDragEnter: (event: DragEvent<HTMLLabelElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsDragging(true);
+    },
+    onDragOver: (event: DragEvent<HTMLLabelElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = "copy";
+      setIsDragging(true);
+    },
+    onDragLeave: (event: DragEvent<HTMLLabelElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!dropZoneRef.current?.contains(event.relatedTarget as Node | null)) {
+        setIsDragging(false);
+      }
+    },
+    onDrop: handleDrop,
+  };
+
+  function openFilePicker() {
+    fileInputRef.current?.click();
+  }
+
+  function onDropZoneKey(event: KeyboardEvent<HTMLLabelElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openFilePicker();
+    }
+  }
+
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
-      <header className="px-[3.2rem] pt-[4.0rem]">
+      <header className="px-[3.2rem] pt-[4.0rem] text-center">
         <div className="flex flex-col gap-[0.8rem]">
-          <h1 className="text-[2.8rem] font-semibold leading-[1.1]">{t("app_title")}</h1>
-          <p className="text-[1.4rem] text-foreground/70 leading-[1.5]">{t("app_tagline")}</p>
+          <h1 className="text-[2.4rem] font-semibold leading-[1.1]">{t("app_title")}</h1>
+          <p className="text-[1.2rem] text-foreground/70 leading-[1.6]">{t("app_tagline")}</p>
         </div>
       </header>
 
-      <main className="flex-1 px-[3.2rem] pt-[3.2rem] pb-[12rem]">
-        <section className="rounded-[2.4rem] border border-foreground/10 bg-foreground/[0.03] p-[3.2rem] backdrop-blur-[1.2rem] shadow-[0_1.2rem_3.2rem_rgba(0,0,0,0.08)]">
-          <div className="flex flex-col gap-[2.4rem]">
-                <div className="flex flex-col gap-[1.2rem]">
-                  <label className="text-[1.2rem] uppercase tracking-[0.2rem] text-foreground/60">
-                    {t("upload_button")}
-                  </label>
-                  <div className="flex items-center gap-[1.2rem]">
-                    <Input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={onFileChange}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      {t("upload_button")}
-                    </Button>
-                  </div>
-                </div>
+      <main
+        className="flex-1 px-[3.2rem] pt-[2.8rem]"
+        style={{ paddingBottom: "calc(16rem + env(safe-area-inset-bottom))" }}
+      >
+        <section className="mx-auto flex w-full max-w-[62rem] flex-col gap-[1.6rem] text-center">
+          <input
+            ref={fileInputRef}
+            id="upload-input"
+            type="file"
+            accept="image/*"
+            onChange={onFileChange}
+            className="sr-only"
+          />
 
-                {previewUrl ? (
-                  <div className="relative overflow-hidden rounded-[2.0rem] border border-foreground/10">
-                    <Image
-                      src={previewUrl}
-                      alt="Selected preview"
-                      width={800}
-                      height={800}
-                      className="h-auto w-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex min-h-[18rem] items-center justify-center rounded-[2.0rem] border border-dashed border-foreground/20 bg-background/60 text-[1.3rem] text-foreground/50">
-                    <p>{t("supported_formats")}</p>
-                  </div>
-                )}
-
-                <div className="min-h-[2.0rem] text-[1.3rem]">
-                  {status === "uploading" && <p className="text-foreground/80">{t("uploading")}</p>}
-                  {status === "success" && <p className="text-green-600">{t("upload_success")}</p>}
-                  {status === "error" && errorMessage && (
-                    <p className="text-red-500">{errorMessage}</p>
-                  )}
-                  {status === "idle" && errorMessage && (
-                    <p className="text-foreground/70">{errorMessage}</p>
-                  )}
+          <label
+            ref={dropZoneRef}
+            role="button"
+            tabIndex={0}
+            aria-label={t("drop_zone_title")}
+            htmlFor="upload-input"
+            onKeyDown={onDropZoneKey}
+            className={`w-full cursor-pointer overflow-hidden rounded-[2.8rem] border border-dashed px-[2.4rem] py-[3.2rem] text-center transition-colors duration-150 ${
+              isDragging
+                ? "border-foreground/50 bg-foreground/10 text-foreground"
+                : "border-foreground/25 bg-background text-foreground/70"
+            }`}
+            {...dropZoneProps}
+          >
+            {previewUrl ? (
+              <div className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-[2.4rem] border border-foreground/15 bg-background/70">
+                <Image
+                  src={previewUrl}
+                  alt="Selected preview"
+                  fill
+                  sizes="(max-width: 768px) 90vw, 520px"
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-[1.6rem]">
+                <span className="text-[2.2rem]">🖼️</span>
+                <div className="space-y-[0.6rem]">
+                  <p className="text-[1.3rem] font-medium text-foreground">
+                    {t("drop_zone_title")}
+                  </p>
+                  <p className="text-[1.1rem] text-foreground/70">
+                    {t("drop_zone_hint")}
+                  </p>
+                  <p className="text-[1.0rem] text-foreground/50">
+                    {t("supported_formats")}
+                  </p>
                 </div>
+                <Button
+                  type="button"
+                  variant="default"
+                  className="w-auto px-[3.2rem]"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openFilePicker();
+                  }}
+                >
+                  {t("upload_button")}
+                </Button>
+              </div>
+            )}
+          </label>
+
+          {previewUrl ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => applyFile(null)}
+            >
+              {t("clear_button")}
+            </Button>
+          ) : null}
+
+          {previewUrl ? (
+            <Button
+              type="button"
+              variant="default"
+              className="w-full"
+              onClick={handleUpload}
+              disabled={status === "uploading"}
+            >
+              {status === "uploading" ? t("uploading") : t("upload_cta")}
+            </Button>
+          ) : null}
+
+          <div className="min-h-[2.0rem] text-[1.1rem]">
+            {status === "uploading" && <p className="text-foreground/80">{t("uploading")}</p>}
+            {status === "success" && <p className="text-green-500">{t("upload_success")}</p>}
+            {status === "error" && errorMessage && (
+              <p className="text-red-500">{errorMessage}</p>
+            )}
+            {status === "idle" && errorMessage && (
+              <p className="text-foreground/70">{errorMessage}</p>
+            )}
           </div>
         </section>
 
-        <section className="mt-[4.0rem]">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[2.0rem] font-semibold">{t("recent_uploads")}</h2>
-            <span className="text-[1.2rem] text-foreground/50">{uploads.length}</span>
+        <section className="mt-[4.0rem] text-center">
+          <div className="flex flex-col items-center gap-[0.6rem]">
+            <h2 className="text-[1.8rem] font-semibold">{t("recent_uploads")}</h2>
+            <span className="text-[1.1rem] text-foreground/50">{uploads.length}</span>
           </div>
           {uploads.length === 0 ? (
             <div className="mt-[2.4rem] rounded-[2.4rem] border border-foreground/10 bg-background/70 p-[3.2rem] text-center">
-              <h3 className="text-[1.6rem] font-semibold">{t("empty_state_title")}</h3>
-              <p className="mt-[0.8rem] text-[1.3rem] text-foreground/60">
+              <h3 className="text-[1.4rem] font-semibold">{t("empty_state_title")}</h3>
+              <p className="mt-[0.8rem] text-[1.2rem] text-foreground/60">
                 {t("empty_state_description")}
               </p>
             </div>
@@ -194,7 +313,7 @@ export function UploadScreen({ initialUploads }: { initialUploads: Upload[] }) {
                       className="object-cover"
                     />
                   </div>
-                  <div className="mt-[0.8rem] truncate text-[1.1rem] text-foreground/70" title={upload.originalName}>
+                  <div className="mt-[0.8rem] truncate text-[1.0rem] text-foreground/70" title={upload.originalName}>
                     {upload.originalName}
                   </div>
                 </article>
@@ -204,23 +323,17 @@ export function UploadScreen({ initialUploads }: { initialUploads: Upload[] }) {
         </section>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-foreground/10 bg-background/80 backdrop-blur-[2.0rem]">
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-foreground/10 bg-background/90 backdrop-blur-[1.6rem]">
         <div
-          className="mx-auto flex w-full max-w-[64rem] items-center justify-between gap-[1.6rem] px-[3.2rem] py-[2.4rem]"
-          style={{ paddingBottom: "calc(2.4rem + env(safe-area-inset-bottom))" }}
+          className="mx-auto flex w-full items-center justify-center px-[3.2rem] py-[2.0rem]"
+          style={{ paddingBottom: "calc(1.2rem + env(safe-area-inset-bottom))" }}
         >
-          <div className="truncate pr-[1.6rem] text-[1.2rem] text-foreground/70">
-            {selectedFile ? selectedFile.name : t("upload_button")}
+          <div className="flex items-center gap-[1.2rem] text-[1.0rem] text-foreground/70">
+            <span className="flex h-[2.8rem] w-[2.8rem] items-center justify-center rounded-full border border-foreground/20 text-[1.1rem] font-semibold">
+              H
+            </span>
+            <span>Home</span>
           </div>
-          <Button
-            type="button"
-            variant="default"
-            size="default"
-            onClick={handleUpload}
-            disabled={status === "uploading" || !selectedFile}
-          >
-            {status === "uploading" ? t("uploading") : t("upload_cta")}
-          </Button>
         </div>
       </nav>
     </div>

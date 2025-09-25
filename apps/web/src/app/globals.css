@@ -20,7 +20,7 @@
 }
 
 html {
-  font-size: calc(100vw / 24);
+  font-size: calc(100vw / 28);
   max-width: 100%;
   overflow-x: hidden;
   scroll-behavior: smooth;
@@ -39,6 +39,7 @@ body {
   min-height: 100dvh;
   margin: 0;
   overscroll-behavior-y: contain;
+  touch-action: pan-y;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
